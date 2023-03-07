@@ -1,1 +1,10 @@
-{"main":"index.js","dependencies":{"discord.js":"^14.7.1"}}
+{
+    "main":"index.js",
+    "dependencies": {
+        "discord.js": "^14.7.1"
+    },
+    "scripts": {
+        "start": "node index.js",
+        "deploy-commands": "node deploy-commands.js"
+    }
+}
