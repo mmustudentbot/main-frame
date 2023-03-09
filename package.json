@@ -1,7 +1,9 @@
 {
     "main": "index.js",
     "dependencies": {
+        "csvtojson": "^2.0.10",
         "discord.js": "^14.7.1",
+        "nedb": "^1.8.0",
         "node-fetch": "^2.6.1"
     },
     "scripts": {

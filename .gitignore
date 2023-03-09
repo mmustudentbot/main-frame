@@ -1,5 +1,6 @@
-# Config.json
+# Project specific
 config.json
+database.db
 
 # Logs
 logs
