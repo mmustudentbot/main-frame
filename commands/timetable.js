@@ -19,6 +19,10 @@ module.exports = {
             .setName('view')
             .setDescription('View your timetable')
         )
+        .addSubcommand(subcommand => subcommand
+            .setName('delete')
+            .setDescription('Deletes your timetable data')    
+        )
     ,async execute(interaction) {
         if (!interaction.isCommand()) return;
 
@@ -52,8 +56,6 @@ module.exports = {
                                 id: interaction.user.id,
                                 data: input
                             }, (err, newDocs) => { if (err) { console.log(err) }; });
-
-                            console.log(input);
                         });
                     });
                 });
@@ -61,7 +63,6 @@ module.exports = {
                 await interaction.reply('set!!');
                 break;
             case "view":
-
                 let output = [];
                 db.find({ id: interaction.user.id}, async (err, docs) => {
                     try {
@@ -81,6 +82,9 @@ module.exports = {
 
                 })
                 break;
+            case "delete":
+                db.remove({ id: interaction.user.id}, {}, (err, numRemoved) => {}); // Delete the old entry.
+                await interaction.reply('Data deleted.');
         }
     },
 };
