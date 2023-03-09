@@ -1,6 +1,7 @@
 const { SlashCommandBuilder } = require('discord.js');
 const csv = require('csvtojson');
-const sqlite3 = require('sqlite3');
+const Datastore = require('nedb');
+const https = require("https");
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -9,9 +10,9 @@ module.exports = {
         .addSubcommand(subcommand => subcommand
             .setName('set')
             .setDescription('Set your timetable data')
-            .addStringOption(option => 
-                option.setName('url')
-                    .setDescription('URL of the myTimetable CSV export. Please make sure it is only for a week.')
+            .addAttachmentOption(option => 
+                option.setName('file')
+                    .setDescription('File of the myTimetable CSV export. Please make sure it is only for a week.')
                     .setRequired(true))
         )
         .addSubcommand(subcommand => subcommand
@@ -21,32 +22,72 @@ module.exports = {
     ,async execute(interaction) {
         if (!interaction.isCommand()) return;
 
+        let db = new Datastore({ filename: 'database.db', autoload: true });
+
         switch(interaction.options.getSubcommand()) {
             case "set":
+                let input = [];
+                
+                let timetable = [];
+                let url = interaction.options.getAttachment("file").attachment;
+                https.get(url, function (res) {
+                    let data = '';
+                    res.on('data', function (chunk) {
+                        data += chunk;
+                    });
+                    res.on('end', function () {
+                        csv().fromString(data).then((obj) => {
+                            timetable = obj;
+
+                            timetable.forEach(session => {
+                                let description = session["Activity description"].toUpperCase();
+                                let day = session["Start day"];
+                                let start_time = session["Start time"];
+                                let end_time = session["End time"];
+                                let duration = session["Duration"];
+                                let location = session["Location(s)"].replace("     -     ", " - ");
+
+                                input.push({name: description, value: `${day}: ${start_time} - ${end_time}, a total of ${duration} hours.\nAt ${location}.`})
+                            })
+
+                            db.remove({ id: interaction.user.id}, {}, (err, numRemoved) => {}); // Delete the old entry.
+
+                            db.insert({
+                                id: interaction.user.id,
+                                data: input
+                            }, (err, newDocs) => { if (err) { console.log(err) }; });
+
+                            console.log(input);
+
+
+
+
+                        });
+                    });
+                });
+
                 await interaction.reply('set!!');
                 break;
             case "view":
+
                 let output = [];
-                let timetable = await csv().fromFile('sample-data/timetable_2023-03-07.csv');
-                timetable.forEach(session => {
-                    let description = session["Activity description"].toUpperCase();
-                    let day = session["Start day"];
-                    let start_time = session["Start time"];
-                    let end_time = session["End time"];
-                    let duration = session["Duration"];
-                    let location = session["Location(s)"].replace("     -     ", " - ");
+                db.find({ id: interaction.user.id}, async (err, docs) => {
+                    try {
+                        output = docs[0].data;
+                    } catch {
+                        output = [{name: "No timetable found.", value: "Please set a timetable."}]
+                    }
 
-                    output.push({name: description, value: `${day}: ${start_time} - ${end_time}, a total of ${duration} hours.\nAt ${location}.`})
+                    await interaction.reply({embeds: [{
+                        color: 0xfd9e5f,
+                        title: `Timetable for ${interaction.user.id}`,
+                        thumbnail: {
+                            url: 'https://i.imgur.com/TvnoxGp.png',
+                        },
+                        fields: output,
+                    }]});
+
                 })
-
-                await interaction.reply({embeds: [{
-                    color: 0xfd9e5f,
-                    title: `Timetable for ${interaction.user.id}`,
-                    thumbnail: {
-                        url: 'https://i.imgur.com/TvnoxGp.png',
-                    },
-                    fields: output,
-                }]});
                 break;
         }
     },
