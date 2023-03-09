@@ -27,8 +27,6 @@ module.exports = {
         switch(interaction.options.getSubcommand()) {
             case "set":
                 let input = [];
-                
-                let timetable = [];
                 let url = interaction.options.getAttachment("file").attachment;
                 https.get(url, function (res) {
                     let data = '';
@@ -36,9 +34,7 @@ module.exports = {
                         data += chunk;
                     });
                     res.on('end', function () {
-                        csv().fromString(data).then((obj) => {
-                            timetable = obj;
-
+                        csv().fromString(data).then((timetable) => {
                             timetable.forEach(session => {
                                 let description = session["Activity description"].toUpperCase();
                                 let day = session["Start day"];
@@ -58,10 +54,6 @@ module.exports = {
                             }, (err, newDocs) => { if (err) { console.log(err) }; });
 
                             console.log(input);
-
-
-
-
                         });
                     });
                 });
