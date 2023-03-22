@@ -8,6 +8,7 @@
     },
     "scripts": {
         "start": "node index.js",
-        "deploy-commands": "node deploy-commands.js"
+        "deploy-commands": "node deploy-commands.js",
+        "dev": "node deploy-commands && node index.js "
     }
 }
