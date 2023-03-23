@@ -1,5 +1,6 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const fetch = require('node-fetch');
+const { EmbedBuilder } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -18,13 +19,25 @@ module.exports = {
             await interaction.reply('City not found.');
         } else {
             //Parse the relevant weather data
-
             const temperature = data.main.temp;
             const weatherIcon = `http://openweathermap.org/img/w/${data.weather[0].icon}.png`;
             const feels_like = data.main.feels_like;
             const humidity = data.main.humidity;
             const weather_description = data.weather[0].description;
-            await interaction.reply(`**${city}** - Temperature: ${temperature}°C, Feels like: ${feels_like}°C, Humidity: ${humidity}%, Description: ${weather_description}`);
+            // await interaction.reply(`**${city}** - Temperature: ${temperature}°C, Feels like: ${feels_like}°C, Humidity: ${humidity}%, Description: ${weather_description}`);
+            let embed = new EmbedBuilder()
+                .setColor('#0x0099FF')
+                .setTitle(`The Weather at **${city}**: `)
+                .setThumbnail(`${weatherIcon}`)
+                .addFields({
+                    name: ` Temperature is currently: ${temperature}°C`,
+                    value: `Feels like: ${feels_like}°C`,
+                    value: `Humidity: ${humidity}%`,
+                    value: `Description: ${weather_description}`
+
+                })
+                .setFooter({ text: 'Powered by Openweathermap API' });
+            await interaction.reply({ embeds: [embed] });
         }
     },
 };
