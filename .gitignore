@@ -1,6 +1,8 @@
 # Project specific
 config.json
 database.db
+events.json
+sample-data/
 
 # Logs
 logs
