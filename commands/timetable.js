@@ -14,7 +14,7 @@ module.exports = {
             .setDescription('Set your timetable data')
             .addStringOption(option => 
                 option.setName('url')
-                    .setDescription('url hahahahhahahahaha')
+                    .setDescription('Please enter the iCalendar import url. (This can be found user Connect Calendar > Other)')
                     .setRequired(true))
         )
         .addSubcommand(subcommand => subcommand
@@ -40,53 +40,74 @@ module.exports = {
                     url: url
                 }, (err, newDocs) => { if (err) { console.log(err) }; });
 
-                await interaction.reply('set!!');
+                await interaction.reply({embeds: [{
+                    color: 0xfd9e5f,
+                    title: `Timetable for ${interaction.user.id}`,
+                    thumbnail: {
+                        url: 'https://i.imgur.com/TvnoxGp.png',
+                    },
+                    fields: [{name: "URL added.", value: "View your timetable by typing `/timetable view`."}],
+                }]});
                 break;
             case "view":
                 db.find({ id: interaction.user.id}, async (err, docs) => {
-                    ical_url = docs[0].url;
+                    try {
+                        let ical_url = docs[0].url;
+                        let output = [];
 
-                    axios.get(ical_url).then(function (response) {
-                        const todaysDate = new Date; // get current date
-                        const weekStart = startOfWeek(todaysDate, {weekStartsOn: 1});
-                        const weekEnd = endOfWeek(todaysDate, {weekStartsOn: 1});
-
-                        let output = []
-                        let data = ical.parseICS(response.data);
-                        for (let k in data) {
-                            if (data.hasOwnProperty(k)) {
-                                var ev = data[k];
-                                if (data[k].type == 'VEVENT') {
-                                    let requirements = new Date(ev.start) > weekStart
-                                                    && new Date(ev.start) < weekEnd;
-                                                    
-                                    if (requirements) {
-                                        let description = ev.summary.toUpperCase();
-                                        console.log(ev.location)
-                                        let location = (ev.location != "") ? `\n*${ev.location.replace("     -     ", " - ")}*` : "";
-                                        let day = `${ev.start.getDate()} of ${months[ev.start.getMonth()]}`;
-                                        let time = ev.start.toLocaleTimeString('en-GB');
-
-                                        output.push({name: description, value: `${day} at ${time}. ${location}`})
+                        axios.get(ical_url).then(function (response) {
+                            const todaysDate = new Date; // get current date
+                            const weekStart = startOfWeek(todaysDate, {weekStartsOn: 1});
+                            const weekEnd = endOfWeek(todaysDate, {weekStartsOn: 1});
+                            let data = ical.parseICS(response.data);
+                            for (let k in data) {
+                                if (data.hasOwnProperty(k)) {
+                                    var ev = data[k];
+                                    if (data[k].type == 'VEVENT') {
+                                        if (new Date(ev.start) > weekStart
+                                         && new Date(ev.start) < weekEnd) {
+                                            let description = ev.summary.toUpperCase();
+                                            let location = (ev.location != "") ? `\n*${ev.location.replace("     -     ", " - ")}*` : "";
+                                            let day = `${ev.start.getDate()} of ${months[ev.start.getMonth()]}`;
+                                            let time = ev.start.toLocaleTimeString('en-GB');
+    
+                                            output.push({name: description, value: `${day} at ${time}. ${location}`})
+                                        }
                                     }
                                 }
                             }
-                        }
-
+    
+                            interaction.reply({embeds: [{
+                                color: 0xfd9e5f,
+                                title: `Timetable for ${interaction.user.id}`,
+                                thumbnail: {
+                                    url: 'https://i.imgur.com/TvnoxGp.png',
+                                },
+                                fields: output,
+                            }]})
+                        });
+                    } catch {
                         interaction.reply({embeds: [{
                             color: 0xfd9e5f,
                             title: `Timetable for ${interaction.user.id}`,
                             thumbnail: {
                                 url: 'https://i.imgur.com/TvnoxGp.png',
                             },
-                            fields: output,
+                            fields: [{name: "No data found.", value: "Please add your URL."}],
                         }]})
-                    });
+                    }
                 });
                 break;
             case "delete":
                 db.remove({ id: interaction.user.id}, {}, (err, numRemoved) => {}); // Delete the old entry.
-                await interaction.reply('Data deleted.');
+                await interaction.reply({embeds: [{
+                    color: 0xfd9e5f,
+                    title: `Timetable for ${interaction.user.id}`,
+                    thumbnail: {
+                        url: 'https://i.imgur.com/TvnoxGp.png',
+                    },
+                    fields: [{name: "Data deleted.", value: "If you want to use the command again, please add another URL."}],
+                }]});
         }
     },
 };
